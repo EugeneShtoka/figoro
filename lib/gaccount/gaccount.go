@@ -43,14 +43,24 @@ func New(ctx context.Context, serviceName string, accountName string) (*GAccount
 	}, nil
 }
 
-func (s *GAccount) Events(filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
-	events, err := filter.Apply(s.service.Events.List("primary")).Do()
+func (s *GAccount) Events(calendarId string, filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
+	events, err := filter.Apply(s.service.Events.List(calendarId)).Do()
 
 	if err != nil {
 		return nil, err
 	}
 
 	return events.Items, nil
+}
+
+func (s *GAccount) Calendars() ([]*calendar.CalendarListEntry, error) {
+	calendars, err := s.service.CalendarList.List().Do()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return calendars.Items, nil
 }
 
 func getService(ctx  context.Context, serviceName string, accountName string) (*calendar.Service, error) {

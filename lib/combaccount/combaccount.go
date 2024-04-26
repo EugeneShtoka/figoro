@@ -18,6 +18,7 @@ package combaccount
 
 import (
 	"context"
+	"sort"
 
 	"github.com/EugeneShtoka/figoro/lib/eventsfilter"
 	"github.com/EugeneShtoka/figoro/lib/gaccount"
@@ -28,10 +29,10 @@ type CombinedAccount struct {
 	accounts []*gaccount.GAccount
 }
 
-func New(ctx context.Context, serviceName string, calNames []string) (*CombinedAccount, error) {
+func New(ctx context.Context, serviceName string, accountNames []string) (*CombinedAccount, error) {
 	var accounts []*gaccount.GAccount
-	for _, calName := range calNames {
-		gAcc, err := gaccount.New(ctx, serviceName, calName)
+	for _, accountName := range accountNames {
+		gAcc, err := gaccount.New(ctx, serviceName, accountName)
 		if err != nil {
 			return nil, err
 		}
@@ -41,15 +42,42 @@ func New(ctx context.Context, serviceName string, calNames []string) (*CombinedA
 	return &CombinedAccount{ accounts }, nil
 }
 
+func sortEvents(events []*calendar.Event) {
+	sort.Slice(events, func(i, j int) bool {
+		if (events[i].Start.Date == "") {
+			if (events[j].Start.Date == "") {
+				return events[i].Start.DateTime < events[j].Start.DateTime
+			} else {
+				return events[i].Start.DateTime < events[j].Start.Date
+			}
+		} else if (events[j].Start.Date == "") {
+			return events[i].Start.Date < events[j].Start.DateTime 
+		}
+		return events[i].Start.Date < events[j].Start.Date
+	})
+}
+
 func (ca *CombinedAccount) Events(filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
 	var combinedEvents []*calendar.Event
 	for _, gAcc := range ca.accounts {
-		events,  err := gAcc.Events(filter)
-		if (err == nil) {
-			combinedEvents = append(combinedEvents, events...)
-		} else {
+		calendars, err := gAcc.Calendars()
+		if err != nil {
 			return nil, err
 		}
+		for _, cal := range calendars {
+			events, err := gAcc.Events(cal.Id, filter)
+
+			if err != nil {
+				return nil, err
+			}
+
+			combinedEvents = append(combinedEvents, events...)
+		}
 	}
+
+	if (filter.IsOrderedByStartTime()) {
+		sortEvents(combinedEvents)
+	}
+
 	return combinedEvents, nil	
 }

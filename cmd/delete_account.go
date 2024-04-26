@@ -27,7 +27,7 @@ import (
 
 // deleteAccountCmd represents the delete command
 var deleteAccountCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "account",
 	Short: "A brief description of your command",
 	Args:  cobra.ExactArgs(1),
 	Long: `A longer description that spans multiple lines and likely contains examples

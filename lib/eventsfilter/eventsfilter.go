@@ -82,6 +82,10 @@ func (ef *EventsFilter) ShowDeleted () *EventsFilter {
 	return ef
 }
 
+func (ef *EventsFilter) IsOrderedByStartTime () bool {
+	return (*ef.orderBy == "startTime")
+}
+
 func (ef *EventsFilter) Apply (listCall *calendar.EventsListCall) *calendar.EventsListCall {
 	listCall = listCall.ShowDeleted(ef.deleted).SingleEvents(ef.single);
 

@@ -60,6 +60,10 @@ func (ef *EventsFilter) MaxResults (results int64) *EventsFilter {
 	return ef
 }
 
+func (ef *EventsFilter) GetMaxResults () *int64 {
+	return ef.maxResults
+}
+
 func (ef *EventsFilter) EventTypes (types string) *EventsFilter {
 	val := types
 	ef.eventTypes = &val
@@ -84,6 +88,10 @@ func (ef *EventsFilter) ShowDeleted () *EventsFilter {
 
 func (ef *EventsFilter) IsOrderedByStartTime () bool {
 	return (*ef.orderBy == "startTime")
+}
+
+func (ef *EventsFilter) IsOrderedByUpdated () bool {
+	return (*ef.orderBy == "updated")
 }
 
 func (ef *EventsFilter) Apply (listCall *calendar.EventsListCall) *calendar.EventsListCall {

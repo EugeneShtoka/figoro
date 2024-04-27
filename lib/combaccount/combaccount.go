@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"time"
 
+	"github.com/EugeneShtoka/figoro/lib/concurrentresult"
 	"github.com/EugeneShtoka/figoro/lib/eventsfilter"
 	"github.com/EugeneShtoka/figoro/lib/gaccount"
+	"github.com/EugeneShtoka/figoro/lib/sliceutils"
 	"google.golang.org/api/calendar/v3"
 )
 
@@ -42,7 +43,7 @@ func New(serviceName string, accounts []*gaccount.GAccount) (*CombinedAccount, e
 	return &CombinedAccount{ accounts }, nil
 }
 
-func sortEvents(events []*calendar.Event) {
+func sortEventsByStartTime(events []*calendar.Event) {
 	sort.Slice(events, func(i, j int) bool {
 		if (events[i].Start.Date == "") {
 			if (events[j].Start.Date == "") {
@@ -57,45 +58,58 @@ func sortEvents(events []*calendar.Event) {
 	})
 }
 
+func sortEventsByUpdated(events []*calendar.Event) {
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].Updated < events[j].Updated
+	})
+}
+
+func reapplyFiltersOnCombinedEvents(events []*calendar.Event, filter *eventsfilter.EventsFilter) []*calendar.Event {
+	if filter.IsOrderedByStartTime() {
+		sortEventsByStartTime(events)
+	}
+
+	if filter.IsOrderedByUpdated() {
+		sortEventsByUpdated(events)
+	}
+
+	maxResults := filter.GetMaxResults()
+	if (maxResults != nil) {
+		events = events[:*maxResults]
+	}
+
+	return events
+}
+
+func getEvents(gAcc *gaccount.GAccount, calendar string,  filter *eventsfilter.EventsFilter, concurrentResult *concurrentresult.ConcurrentResult[[]*calendar.Event]) {
+	events, err := gAcc.Events(calendar, filter)
+	if err != nil {
+		concurrentResult.SendError(err)
+		concurrentResult.Cancel()
+	}
+	concurrentResult.SendResult(events)
+}
+
 func (ca *CombinedAccount) Events(filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
-	start := time.Now()
-	_, cancel := context.WithCancel(context.Background())
-    defer cancel()
-	eventsChannel := make(chan []*calendar.Event)
-	errorChanel := make(chan error)
+	concurrentResult := concurrentresult.New[[]*calendar.Event](context.Background())
+	defer concurrentResult.Cancel()
 
 	calCount := 0
 	for _, gAcc := range ca.accounts {
 		calendars := gAcc.ResolveCalendars()
 		calCount += len(calendars)
 		for _, calendar := range calendars {
-			go func(gAcc *gaccount.GAccount, calendar string) {
-				events, err := gAcc.Events(calendar, filter)
-				if err != nil {
-					errorChanel <- err
-					cancel()
-				}
-				eventsChannel <- events
-			} (gAcc, calendar) 
+			go getEvents(gAcc, calendar, filter, concurrentResult)
 		}
 	}
 
-	var combinedEvents []*calendar.Event
-	for i := 0; i < calCount; i++ {
-		select {
-			case events := <-eventsChannel:
-				combinedEvents = append(combinedEvents, events...)
-			case err := <-errorChanel:
-				return nil, fmt.Errorf("failed to get events: %w", err)
-		}
+	events2DArr, err := concurrentResult.Results(calCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get events: %w", err)
 	}
-
-	if filter.IsOrderedByStartTime() {
-		sortEvents(combinedEvents)
-	}
-
-	elapsed := time.Since(start)
-	fmt.Printf("Execution time: %s\n", elapsed)
 	
-	return combinedEvents, nil	
+	combinedEvents := sliceutils.FlattenSlice(events2DArr)
+	filteredEvents := reapplyFiltersOnCombinedEvents(combinedEvents, filter)
+
+	return filteredEvents, nil	
 }

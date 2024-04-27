@@ -1,16 +1,18 @@
 {
   "cSpell.words": [
     "combaccount",
+    "concurrentresult",
     "eventsfilter",
+    "figoro",
     "flagstruct",
     "gaccount",
     "gaseed",
     "gauth",
-    "figoro",
     "levelwriter",
     "managedflag",
     "manifoldco",
     "promptui",
+    "sliceutils",
     "tokenrepo",
     "typedkeyring",
     "userinput"

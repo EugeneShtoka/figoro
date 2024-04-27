@@ -43,12 +43,12 @@ func New(clientID string, clientSecret string, bindAddress string, authEndpoint 
 	return &GASeed{	Config: config }
 }
 
-func (s *GASeed) SetToken(ctx context.Context, code string) (*GASeed, error) {
+func (s *GASeed) SetToken(code string) (*GASeed, error) {
 	var err error
-	s.Token, err = s.Config.Exchange(ctx, code)
+	s.Token, err = s.Config.Exchange(context.Background(), code)
 	return s, err
 }
 
-func (s *GASeed) GetClient(ctx context.Context) *http.Client {
-	return s.Config.Client(ctx, s.Token)
+func (s *GASeed) GetClient() *http.Client {
+	return s.Config.Client(context.Background(), s.Token)
 }

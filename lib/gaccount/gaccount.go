@@ -40,8 +40,8 @@ type GAccount struct {
 	service 		*calendar.Service
 }
 
-func New(ctx context.Context, serviceName string, accountName string) (*GAccount, error) {
-	service, err := getService(ctx, serviceName, accountName)
+func New(serviceName string, accountName string) (*GAccount, error) {
+	service, err := getService(serviceName, accountName)
 	if (err != nil) {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func (s *GAccount) SyncCalendars() (error) {
 	return nil
 }
 
-func (s *GAccount) Init(ctx context.Context, serviceName string) (error) {
-	service, err := getService(ctx, serviceName, s.Name)
+func (s *GAccount) Init(serviceName string) (error) {
+	service, err := getService(serviceName, s.Name)
 	if (err != nil) {
 		return err
 	}
@@ -96,15 +96,15 @@ func (s *GAccount) ResolveCalendars() ([]string) {
 	return set.New(s.Calendars.All...).Difference(set.New(s.Calendars.BlackList...)).ToSlice();
 }
 
-func getService(ctx  context.Context, serviceName string, accountName string) (*calendar.Service, error) {
+func getService(serviceName string, accountName string) (*calendar.Service, error) {
 	kr := typedkeyring.New[gaseed.GASeed](serviceName)
 	gaSeed, err := kr.Load(accountName)
 	if err != nil {
 		return nil, err
 	}
 
-	client := gaSeed.GetClient(ctx)
-	return calendar.NewService(ctx, option.WithHTTPClient(client))
+	client := gaSeed.GetClient()
+	return calendar.NewService(context.Background(), option.WithHTTPClient(client))
 }
 
 func getCalendars(service *calendar.Service) ([]string, error) {

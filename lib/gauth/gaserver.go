@@ -174,6 +174,6 @@ func (gaServer *GAServer) Authorize(ctx context.Context) (*gaseed.GASeed, error)
 		return nil, fmt.Errorf("failed to start auth webserver: %w", err)
 	} 
 
-	return gaServer.GASeed.SetToken(ctx, code)
+	return gaServer.GASeed.SetToken(code)
 }
 

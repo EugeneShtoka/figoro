@@ -17,7 +17,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -97,9 +96,7 @@ func listEvents() (string, error) {
 			return "", fmt.Errorf("failed to read accounts from config: %v", err)
 		}
 
-		ctx := context.Background()
-
-		account, err := combaccount.New(ctx, serviceName, accounts)
+		account, err := combaccount.New(serviceName, accounts)
 		if (err != nil) {
 			return "", fmt.Errorf("failed to initialize accounts: %v: %v", accounts, err)
 		} 

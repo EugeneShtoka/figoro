@@ -18,7 +18,9 @@ package combaccount
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"time"
 
 	"github.com/EugeneShtoka/figoro/lib/eventsfilter"
 	"github.com/EugeneShtoka/figoro/lib/gaccount"
@@ -29,9 +31,9 @@ type CombinedAccount struct {
 	accounts []*gaccount.GAccount
 }
 
-func New(ctx context.Context, serviceName string, accounts []*gaccount.GAccount) (*CombinedAccount, error) {
+func New(serviceName string, accounts []*gaccount.GAccount) (*CombinedAccount, error) {
 	for _, account := range accounts {
-		err := account.Init(ctx, serviceName)
+		err := account.Init(serviceName)
 		if err != nil {
 			return nil, err
 		}
@@ -56,23 +58,44 @@ func sortEvents(events []*calendar.Event) {
 }
 
 func (ca *CombinedAccount) Events(filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
-	var combinedEvents []*calendar.Event
+	start := time.Now()
+	_, cancel := context.WithCancel(context.Background())
+    defer cancel()
+	eventsChannel := make(chan []*calendar.Event)
+	errorChanel := make(chan error)
+
+	calCount := 0
 	for _, gAcc := range ca.accounts {
 		calendars := gAcc.ResolveCalendars()
-		for _, cal := range calendars {
-			events, err := gAcc.Events(cal, filter)
-
-			if err != nil {
-				return nil, err
-			}
-
-			combinedEvents = append(combinedEvents, events...)
+		calCount += len(calendars)
+		for _, calendar := range calendars {
+			go func(gAcc *gaccount.GAccount, calendar string) {
+				events, err := gAcc.Events(calendar, filter)
+				if err != nil {
+					errorChanel <- err
+					cancel()
+				}
+				eventsChannel <- events
+			} (gAcc, calendar) 
 		}
 	}
 
-	if (filter.IsOrderedByStartTime()) {
+	var combinedEvents []*calendar.Event
+	for i := 0; i < calCount; i++ {
+		select {
+			case events := <-eventsChannel:
+				combinedEvents = append(combinedEvents, events...)
+			case err := <-errorChanel:
+				return nil, fmt.Errorf("failed to get events: %w", err)
+		}
+	}
+
+	if filter.IsOrderedByStartTime() {
 		sortEvents(combinedEvents)
 	}
 
+	elapsed := time.Since(start)
+	fmt.Printf("Execution time: %s\n", elapsed)
+	
 	return combinedEvents, nil	
 }

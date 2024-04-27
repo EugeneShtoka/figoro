@@ -52,8 +52,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		context := context.Background()
-		err := addAccount(context, args[0], &logger)
+		err := addAccount(args[0], &logger)
 		if (err != nil) {
 			showError("failed to get token", err)
 			cmd.Usage()
@@ -61,7 +60,7 @@ to quickly create a Cobra application.`,
 	},
 }
 
-func addAccount(ctx context.Context, accName string, logger *zerolog.Logger) error { 
+func addAccount(accName string, logger *zerolog.Logger) error { 
 	minLength := 3
 	err := validateString("account name", accName, &minLength, nil)
 	if (err != nil) {
@@ -83,7 +82,7 @@ func addAccount(ctx context.Context, accName string, logger *zerolog.Logger) err
 
 	seed, err := authorize(clientID, clientSecret, fmt.Sprintf("%d", port), logger)
 	if (err == nil) {
-		err = saveAccount(ctx, accName, seed)
+		err = saveAccount(accName, seed)
 	}
 
 	return err
@@ -175,14 +174,14 @@ func authorize(clientID string, clientSecret string, port string, logger *zerolo
 	return seed, nil
 }
 
-func saveAccount(ctx context.Context, accountName string, seed *gaseed.GASeed) error {
+func saveAccount(accountName string, seed *gaseed.GASeed) error {
 	keyring := typedkeyring.New[gaseed.GASeed](serviceName)
 	err := keyring.Save(accountName, seed)
 	if err != nil {
 		return fmt.Errorf("failed to save token %s to keyring: %w", accountName, err)
 	}
 
-	account, err := gaccount.New(ctx, serviceName, accountName)
+	account, err := gaccount.New(serviceName, accountName)
 	if err != nil {
 		keyring.Delete(accountName)
 		return fmt.Errorf("failed to add account '%s' to config: %w", accountName, err)

@@ -20,9 +20,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strconv"
 
+	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/EugeneShtoka/figoro/lib/gaseed"
 	"github.com/EugeneShtoka/figoro/lib/gauth"
 	"github.com/EugeneShtoka/figoro/lib/typedkeyring"
@@ -52,7 +52,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := addAccount(args[0], &logger)
+		context := context.Background()
+		err := addAccount(context, args[0], &logger)
 		if (err != nil) {
 			showError("failed to get token", err)
 			cmd.Usage()
@@ -60,7 +61,7 @@ to quickly create a Cobra application.`,
 	},
 }
 
-func addAccount(accName string, logger *zerolog.Logger) error { 
+func addAccount(ctx context.Context, accName string, logger *zerolog.Logger) error { 
 	minLength := 3
 	err := validateString("account name", accName, &minLength, nil)
 	if (err != nil) {
@@ -80,7 +81,10 @@ func addAccount(accName string, logger *zerolog.Logger) error {
 		return err
 	}
 
-	err = authorize(accName, clientID, clientSecret, fmt.Sprintf("%d", port), logger)
+	seed, err := authorize(clientID, clientSecret, fmt.Sprintf("%d", port), logger)
+	if (err == nil) {
+		err = saveAccount(ctx, accName, seed)
+	}
 
 	return err
 }
@@ -161,40 +165,58 @@ func getStringProperty(name string, minLength int, maxLength int) (string, error
 	return value, nil
 }
 
-func authorize(calName string, clientID string, clientSecret string, port string, logger *zerolog.Logger) error {
+func authorize(clientID string, clientSecret string, port string, logger *zerolog.Logger) (*gaseed.GASeed, error) {
 	server := gauth.New(clientID, clientSecret, port, logger)
 	seed, err := server.Authorize(context.Background())
 	if err != nil {
-		return fmt.Errorf("failed to authorize: %w", err)
+		return nil, fmt.Errorf("failed to authorize: %w", err)
 	}
 
+	return seed, nil
+}
+
+func saveAccount(ctx context.Context, accountName string, seed *gaseed.GASeed) error {
 	keyring := typedkeyring.New[gaseed.GASeed](serviceName)
-	err = keyring.Save(calName, seed)
+	err := keyring.Save(accountName, seed)
 	if err != nil {
-		return fmt.Errorf("failed to save token %s to keyring: %w", calName, err)
+		return fmt.Errorf("failed to save token %s to keyring: %w", accountName, err)
 	}
 
-	err = updateConfigFile(calName)
+	account, err := gaccount.New(ctx, serviceName, accountName)
 	if err != nil {
-		keyring.Delete(calName)
-		return fmt.Errorf("failed to add account '%s' to config: %w", calName, err)
+		keyring.Delete(accountName)
+		return fmt.Errorf("failed to add account '%s' to config: %w", accountName, err)
 	}
 
-	fmt.Printf("account '%s' was added to list of available accounts\n", calName)
+	err = updateConfigFile(account)
+	if err != nil {
+		keyring.Delete(accountName)
+		return fmt.Errorf("failed to add account '%s' to config: %w", accountName, err)
+	}
+
+	fmt.Printf("account '%s' was added to list of available accounts\n", accountName)
 	return nil
 }
 
-func updateConfigFile(calName string) error {
+func updateConfigFile(account *gaccount.GAccount) error {
 	if cfgFile == "" {
 		return fmt.Errorf("unable to locate config file")
 	}
 	viper.ReadInConfig()
 
-	accounts := viper.GetStringSlice(accountsConfigKey)
-
-	if (!slices.Contains(accounts, calName)) {
-		accounts = append(accounts, calName)
+	var accounts []gaccount.GAccount
+	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
+	if err != nil {
+		return fmt.Errorf("failed to read accounts from config: %v", err)
 	}
+
+	for _, acc := range accounts {
+		if (acc.Name == account.Name) {
+			return fmt.Errorf("account '%s' already exists in config", account.Name)
+		}
+	}
+
+	accounts = append(accounts, *account)
 
 	viper.Set(accountsConfigKey, accounts)
 	return viper.WriteConfig()

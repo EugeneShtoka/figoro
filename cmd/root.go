@@ -107,9 +107,5 @@ func initRootCmdConfig() {
 
 // TODO: fix command documentation
 // TODO: add test cases
-// TODO: add agenda command
 // TODO: add event commands: add, delete, update
-// TODO: add flags/filters for list events command
-// TODO: support multiple inner calendars 
-// TODO: rename `add calendar` to `add account`
 // TODO: build CI/CD for the project

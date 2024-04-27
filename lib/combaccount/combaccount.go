@@ -29,14 +29,12 @@ type CombinedAccount struct {
 	accounts []*gaccount.GAccount
 }
 
-func New(ctx context.Context, serviceName string, accountNames []string) (*CombinedAccount, error) {
-	var accounts []*gaccount.GAccount
-	for _, accountName := range accountNames {
-		gAcc, err := gaccount.New(ctx, serviceName, accountName)
+func New(ctx context.Context, serviceName string, accounts []*gaccount.GAccount) (*CombinedAccount, error) {
+	for _, account := range accounts {
+		err := account.Init(ctx, serviceName)
 		if err != nil {
 			return nil, err
 		}
-		accounts = append(accounts, gAcc)
 	}
 
 	return &CombinedAccount{ accounts }, nil
@@ -60,12 +58,9 @@ func sortEvents(events []*calendar.Event) {
 func (ca *CombinedAccount) Events(filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
 	var combinedEvents []*calendar.Event
 	for _, gAcc := range ca.accounts {
-		calendars, err := gAcc.Calendars()
-		if err != nil {
-			return nil, err
-		}
+		calendars := gAcc.ResolveCalendars()
 		for _, cal := range calendars {
-			events, err := gAcc.Events(cal.Id, filter)
+			events, err := gAcc.Events(cal, filter)
 
 			if err != nil {
 				return nil, err

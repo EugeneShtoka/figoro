@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/EugeneShtoka/figoro/lib/typedkeyring"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,8 +51,10 @@ func init() {
 }
 
 func deleteAccountFromConfig(calName string) error {
-	accounts := []string (viper.GetStringSlice(accountsConfigKey))
-	accounts = slices.DeleteFunc(accounts, func(s string) bool { return s == calName })
+	var accounts []*gaccount.GAccount
+	viper.UnmarshalKey(accountsConfigKey, &accounts)
+
+	accounts = slices.DeleteFunc(accounts, func(acc *gaccount.GAccount) bool { return acc.Name == calName })
 
 	viper.Set(accountsConfigKey, accounts)
 	err := viper.WriteConfig()

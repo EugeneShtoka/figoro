@@ -111,3 +111,4 @@ func initRootCmdConfig() {
 // TODO: build CI/CD for the project
 // TODO: add commands to manage whitelist & blacklist of calendars
 // TODO: add optional flags to limit events to specific list of calendars
+// TODO: extract part of the code to external packages

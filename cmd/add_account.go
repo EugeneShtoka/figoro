@@ -154,7 +154,7 @@ func getStringProperty(name string, minLength int, maxLength int) (string, error
 
 	prompt := promptui.Prompt{
 		Label:     fmt.Sprintf("Enter %s", name),
-		Validate:  validatePort,
+		Validate:  func (value string) error { return validateString(name, value, &minLength, &maxLength) },
 	}
 
 	value, err := prompt.Run()

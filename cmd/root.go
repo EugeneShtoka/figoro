@@ -77,7 +77,6 @@ func registerCommands() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(deleteCmd)
-	listCmd.AddCommand(listAccountsCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

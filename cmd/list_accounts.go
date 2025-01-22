@@ -18,7 +18,9 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,13 +28,8 @@ import (
 // listCmd represents the list command
 var listAccountsCmd = &cobra.Command{
 	Use:   "accounts",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "List accounts",
+	Long: " Displays a list of all Google Calendar accounts that have been authorized and configured to access your calendar data.",
 	Run: func(cmd *cobra.Command, args []string) {
 		listAccountsFromConfig()
 	},
@@ -43,6 +40,15 @@ func init() {
 }
 
 func listAccountsFromConfig() {
-	accounts := viper.GetStringSlice(accountsConfigKey)
-	fmt.Printf("Authorized accounts: %s\n", accounts)
+	var accounts []gaccount.GAccount
+	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
+	if err != nil {
+		fmt.Errorf("failed to read accounts from config: %v", err)
+	}
+
+	accountsNames := make([]string, len(accounts))
+    for i, account := range accounts {
+        accountsNames[i] = account.Name
+    }
+	fmt.Printf("Authorized accounts: %s\n", strings.Join(accountsNames, ", "))
 }

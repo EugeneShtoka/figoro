@@ -42,7 +42,6 @@ var (
 	deleted			*managedflag.BoolFlag
 )
 
-// listEventsCmd represents the events command
 var listEventsCmd = &cobra.Command{
 	Use:   "events",
 	Short: "A brief description of your command",

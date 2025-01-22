@@ -20,14 +20,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "List entities",
+	Long: "Display a list of entities. Requires a subcommand to specify the type of entity to list [accounts, events]",
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+func init() {
+	rootCmd.AddCommand(listCmd)
 }

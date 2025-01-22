@@ -26,17 +26,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// deleteAccountCmd represents the delete command
 var deleteAccountCmd = &cobra.Command{
-	Use:   "account",
-	Short: "A brief description of your command",
+	Use:   "account [account name]",
 	Args:  cobra.ExactArgs(1),
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Delete account",
+	Long: "Delete account. Requires account name to delete",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := deleteAccountFromConfig(args[0])
 		if (err != nil) {
@@ -50,17 +44,24 @@ func init() {
 	deleteCmd.AddCommand(deleteAccountCmd)
 }
 
-func deleteAccountFromConfig(calName string) error {
-	var accounts []*gaccount.GAccount
-	viper.UnmarshalKey(accountsConfigKey, &accounts)
+func deleteAccountFromConfig(accName string) error {
+	var accounts []gaccount.GAccount
+	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
+	if err != nil {
+		fmt.Errorf("failed to read accounts from config: %v", err)
+	}
 
-	accounts = slices.DeleteFunc(accounts, func(acc *gaccount.GAccount) bool { return acc.Name == calName })
+	predicate := func(acc gaccount.GAccount) bool { return acc.Name == accName }
+	if (!slices.ContainsFunc(accounts, predicate)) {
+		return fmt.Errorf("account '%s' does not exist in config", accName)	
+	}
+	accounts = slices.DeleteFunc(accounts, predicate)
 
 	viper.Set(accountsConfigKey, accounts)
-	err := viper.WriteConfig()
+	err = viper.WriteConfig()
 	if err != nil {
-		return fmt.Errorf("failed to delete account '%s' to config: %w", calName, err)
+		return fmt.Errorf("failed to delete account '%s' from config: %w", accName, err)
 	}
 	keyring := typedkeyring.New[any](serviceName)
-	return keyring.Delete(calName)
+	return keyring.Delete(accName)
 }

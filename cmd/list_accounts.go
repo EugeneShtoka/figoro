@@ -25,11 +25,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// listCmd represents the list command
 var listAccountsCmd = &cobra.Command{
-	Use:   "accounts",
+	Use: "accounts",
 	Short: "List accounts",
-	Long: " Displays a list of all Google Calendar accounts that have been authorized and configured to access your calendar data.",
+	Long: "Display a list of all accounts that have been authorized and configured to access your calendar data.",
 	Run: func(cmd *cobra.Command, args []string) {
 		listAccountsFromConfig()
 	},

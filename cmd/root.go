@@ -32,11 +32,10 @@ var (
 	serviceName = "figoro"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "figoro",
 	Version: "0.0.1",
-	Short: "List events from multiple Google Calendars, offering customizable filtering.",
+	Short: "View and manage multiple Google Calendars.",
 	Long: `List events from multiple Google Calendars, offering customizable filtering. 
 For example:
 
@@ -69,14 +68,6 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgDefault, message)
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "disabled", "log level [debug, info, warn, error, disabled]")
-
-	registerCommands()
-}
-
-func registerCommands() {
-	rootCmd.AddCommand(addCmd)
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(deleteCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -104,7 +95,7 @@ func initRootCmdConfig() {
 	logger.Debug().Msgf("reading configuration from: %s\n", viper.ConfigFileUsed())
 }
 
-// TODO: fix command documentation
+// TODO: fix list events documentation
 // TODO: add test cases
 // TODO: add event commands: add, delete, update
 // TODO: build CI/CD for the project

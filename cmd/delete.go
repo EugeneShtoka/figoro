@@ -20,14 +20,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the auth command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Delete entity",
+	Long: "Delete entity. Requires a subcommand to specify the type of entity to delete [accounts, events] and entity name",
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+func init() {
+	rootCmd.AddCommand(deleteCmd)
 }

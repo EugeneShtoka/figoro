@@ -18,11 +18,7 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
-	"spheric.cloud/xiter"
-
-	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/spf13/cobra"
 )
 
@@ -40,6 +36,31 @@ func init() {
 }
 
 func listAccountsFromConfig() {
-	accountsNames := xiter.Map(getAccountsIterFromConfig(), func(acc gaccount.GAccount) string { return acc.Name })
-	fmt.Printf("Authorized accounts: %s\n", strings.Join(xiter.ToSlice(accountsNames), ", "))
+	accounts := getAccountsFromConfig()
+	//accountsNames := xiter.Map(getAccountsIterFromConfig(), func(acc gaccount.GAccount) string { return acc.Name })
+	//fmt.Printf("Authorized accounts: %s\n", strings.Join(xiter.ToSlice(accountsNames), ", "))
+
+	for _, account := range accounts {
+		fmt.Printf("Account %s\n", account.Name)
+		fmt.Printf("Showing info for calendars:\n")
+		for	_, name := range account.ResolveCalendars() {
+			fmt.Printf("\t%s\n", name)
+		}
+		fmt.Printf("Available calendars:\n")
+		for	_, name := range account.Calendars.All {
+			fmt.Printf("\t%s\n", name)
+		}
+		if (len(account.Calendars.WhiteList) > 0) {
+			fmt.Printf("Whitelisted calendars:\n")
+			for	_, calendar := range account.Calendars.WhiteList {
+				fmt.Printf("\t%s\n", calendar)
+			}
+		}
+		if (len(account.Calendars.BlackList) > 0) {
+			fmt.Printf("Blacklisted calendars:\n")
+			for	_, calendar := range account.Calendars.BlackList {
+				fmt.Printf("\t%s\n", calendar)
+			}
+		}
+	}
 }

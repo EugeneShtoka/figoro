@@ -1,6 +1,8 @@
 module github.com/EugeneShtoka/figoro
 
-go 1.22.0
+go 1.23
+
+toolchain go1.23.5
 
 require (
 	github.com/google/uuid v1.6.0
@@ -35,6 +37,7 @@ require (
 )
 
 require (
+	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -64,4 +67,5 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	spheric.cloud/xiter v0.0.0-20250113160306-a1a2c1108100
 )

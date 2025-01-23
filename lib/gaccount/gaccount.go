@@ -22,8 +22,8 @@ import (
 
 	"github.com/EugeneShtoka/figoro/lib/eventsfilter"
 	"github.com/EugeneShtoka/figoro/lib/gaseed"
-	"github.com/EugeneShtoka/figoro/lib/set"
 	"github.com/EugeneShtoka/figoro/lib/typedkeyring"
+	set "github.com/deckarep/golang-set/v2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
@@ -37,7 +37,7 @@ type GCalendars struct {
 type GAccount struct {
 	Name 			string
 	Calendars 		GCalendars
-	service 		*calendar.Service
+	Service 		*calendar.Service
 }
 
 func New(serviceName string, accountName string) (*GAccount, error) {
@@ -53,13 +53,13 @@ func New(serviceName string, accountName string) (*GAccount, error) {
 
 	return &GAccount{
 		Name: accountName,
-		service: service,
+		Service: service,
 		Calendars: GCalendars{ All: calendars },
 	}, nil
 }
 
 func (s *GAccount) SyncCalendars() (error) {
-	calendars, err := getCalendars(s.service)
+	calendars, err := getCalendars(s.Service)
 	if (err != nil) {
 		return fmt.Errorf("failed to sync calendars: %w", err)
 	}
@@ -74,12 +74,12 @@ func (s *GAccount) Init(serviceName string) (error) {
 		return err
 	}
 
-	s.service = service
+	s.Service = service
 	return nil
 }
 
 func (s *GAccount) Events(calendarId string, filter *eventsfilter.EventsFilter) ([]*calendar.Event, error) {
-	events, err := filter.Apply(s.service.Events.List(calendarId)).Do()
+	events, err := filter.Apply(s.Service.Events.List(calendarId)).Do()
 
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *GAccount) ResolveCalendars() ([]string) {
 		return s.Calendars.WhiteList
 	}
 
-	return set.New(s.Calendars.All...).Difference(set.New(s.Calendars.BlackList...)).ToSlice();
+	return set.NewSet(s.Calendars.All...).Difference(set.NewSet(s.Calendars.BlackList...)).ToSlice();
 }
 
 func getService(serviceName string, accountName string) (*calendar.Service, error) {

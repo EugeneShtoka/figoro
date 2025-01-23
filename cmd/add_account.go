@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/EugeneShtoka/figoro/lib/gaccount"
@@ -59,6 +60,11 @@ func addAccount(accName string, logger *zerolog.Logger) error {
 	err := validateString("account name", accName, &minLength, nil)
 	if (err != nil) {
 		return err
+	}
+
+	accounts := getAccountsFromConfig()
+	if (slices.ContainsFunc(accounts, func(acc gaccount.GAccount) bool { return acc.Name == accName })) {
+		return fmt.Errorf("account '%s' already exists in config", accName)
 	}
 
 	clientID, err := getStringProperty("clientID", 60, 100)
@@ -192,23 +198,7 @@ func saveAccount(accountName string, seed *gaseed.GASeed) error {
 }
 
 func updateConfigFile(account *gaccount.GAccount) error {
-	if cfgFile == "" {
-		return fmt.Errorf("unable to locate config file")
-	}
-	viper.ReadInConfig()
-
-	var accounts []gaccount.GAccount
-	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
-	if err != nil {
-		return fmt.Errorf("failed to read accounts from config: %v", err)
-	}
-
-	for _, acc := range accounts {
-		if (acc.Name == account.Name) {
-			return fmt.Errorf("account '%s' already exists in config", account.Name)
-		}
-	}
-
+	accounts := getAccountsFromConfig()
 	accounts = append(accounts, *account)
 
 	viper.Set(accountsConfigKey, accounts)
@@ -217,24 +207,10 @@ func updateConfigFile(account *gaccount.GAccount) error {
 
 func init() {
 	addCmd.AddCommand(addAccountCmd)
-	cobra.OnInitialize(initAddCmdConfig)
 	
 	addAccountCmd.Flags().IntP("port", "p", defaultPort, "port number for gAuth code response")
 	addAccountCmd.Flags().StringVar(&credFile, "credentials", "", "path to credentials file")
 
 	viper.SetDefault("port", defaultPort)
 	viper.BindPFlag("port", addAccountCmd.Flags().Lookup("port"))
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initAddCmdConfig() {
-	if (credFile != "") {
-		viper.SetConfigFile(credFile)
-		err := viper.MergeInConfig()
-		if err == nil {
-			fmt.Printf("reading credentials from: %s \n", viper.ConfigFileUsed()) 
-		} else {
-			showError(fmt.Sprintf("failed to read credentials file: %s.", credFile), err)
-		}
-	}
 }

@@ -23,10 +23,8 @@ import (
 
 	"github.com/EugeneShtoka/figoro/lib/combaccount"
 	"github.com/EugeneShtoka/figoro/lib/eventsfilter"
-	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/EugeneShtoka/figoro/lib/managedflag"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"google.golang.org/api/calendar/v3"
 )
 
@@ -89,12 +87,7 @@ func eventsToString(events []*calendar.Event) (string, error) {
 }
 
 func listEvents() (string, error) {
-		var accounts []*gaccount.GAccount
-		err := viper.UnmarshalKey(accountsConfigKey, &accounts)
-		if (err != nil) {
-			return "", fmt.Errorf("failed to read accounts from config: %v", err)
-		}
-
+		accounts := getAccountsFromConfig()
 		account, err := combaccount.New(serviceName, accounts)
 		if (err != nil) {
 			return "", fmt.Errorf("failed to initialize accounts: %v: %v", accounts, err)

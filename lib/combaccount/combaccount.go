@@ -29,17 +29,10 @@ import (
 )
 
 type CombinedAccount struct {
-	accounts []*gaccount.GAccount
+	accounts []gaccount.GAccount
 }
 
-func New(serviceName string, accounts []*gaccount.GAccount) (*CombinedAccount, error) {
-	for _, account := range accounts {
-		err := account.Init(serviceName)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func New(serviceName string, accounts []gaccount.GAccount) (*CombinedAccount, error) {
 	return &CombinedAccount{ accounts }, nil
 }
 
@@ -65,6 +58,7 @@ func sortEventsByUpdated(events []*calendar.Event) {
 }
 
 func reapplyFiltersOnCombinedEvents(events []*calendar.Event, filter *eventsfilter.EventsFilter) []*calendar.Event {
+	fmt.Printf("fiter:  %v\n", filter)
 	if filter.IsOrderedByStartTime() {
 		sortEventsByStartTime(events)
 	}
@@ -99,7 +93,7 @@ func (ca *CombinedAccount) Events(filter *eventsfilter.EventsFilter) ([]*calenda
 		calendars := gAcc.ResolveCalendars()
 		calCount += len(calendars)
 		for _, calendar := range calendars {
-			go getEvents(gAcc, calendar, filter, concurrentResult)
+			go getEvents(&gAcc, calendar, filter, concurrentResult)
 		}
 	}
 

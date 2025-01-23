@@ -17,6 +17,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package eventsfilter
 
 import (
+	"fmt"
+
 	"google.golang.org/api/calendar/v3"
 )
 
@@ -87,11 +89,12 @@ func (ef *EventsFilter) ShowDeleted () *EventsFilter {
 }
 
 func (ef *EventsFilter) IsOrderedByStartTime () bool {
-	return (*ef.orderBy == "startTime")
+	fmt.Printf("ef.orderBy: %v\n", ef.orderBy != nil)
+	return (ef.orderBy != nil && *ef.orderBy == "startTime")
 }
 
 func (ef *EventsFilter) IsOrderedByUpdated () bool {
-	return (*ef.orderBy == "updated")
+	return (ef.orderBy != nil && *ef.orderBy == "updated")
 }
 
 func (ef *EventsFilter) Apply (listCall *calendar.EventsListCall) *calendar.EventsListCall {

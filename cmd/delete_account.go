@@ -45,11 +45,7 @@ func init() {
 }
 
 func deleteAccountFromConfig(accName string) error {
-	var accounts []gaccount.GAccount
-	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
-	if err != nil {
-		fmt.Errorf("failed to read accounts from config: %v", err)
-	}
+	accounts := getAccountsFromConfig()
 
 	predicate := func(acc gaccount.GAccount) bool { return acc.Name == accName }
 	if (!slices.ContainsFunc(accounts, predicate)) {
@@ -58,7 +54,7 @@ func deleteAccountFromConfig(accName string) error {
 	accounts = slices.DeleteFunc(accounts, predicate)
 
 	viper.Set(accountsConfigKey, accounts)
-	err = viper.WriteConfig()
+	err := viper.WriteConfig()
 	if err != nil {
 		return fmt.Errorf("failed to delete account '%s' from config: %w", accName, err)
 	}

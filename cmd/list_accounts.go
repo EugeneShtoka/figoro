@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"strings"
 
+	"spheric.cloud/xiter"
+
 	"github.com/EugeneShtoka/figoro/lib/gaccount"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var listAccountsCmd = &cobra.Command{
@@ -39,15 +40,6 @@ func init() {
 }
 
 func listAccountsFromConfig() {
-	var accounts []gaccount.GAccount
-	err := viper.UnmarshalKey(accountsConfigKey, &accounts)
-	if err != nil {
-		fmt.Errorf("failed to read accounts from config: %v", err)
-	}
-
-	accountsNames := make([]string, len(accounts))
-    for i, account := range accounts {
-        accountsNames[i] = account.Name
-    }
-	fmt.Printf("Authorized accounts: %s\n", strings.Join(accountsNames, ", "))
+	accountsNames := xiter.Map(getAccountsIterFromConfig(), func(acc gaccount.GAccount) string { return acc.Name })
+	fmt.Printf("Authorized accounts: %s\n", strings.Join(xiter.ToSlice(accountsNames), ", "))
 }
